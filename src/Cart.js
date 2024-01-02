@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
-import Typography from '@mui/material/Typography';
+// import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
 // import Button from '@mui/material/Button'; 
 
 import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
+import Fab from '@mui/material/Fab';
 import ImageListItem from '@mui/material/ImageListItem';
 import ImageListItemBar from '@mui/material/ImageListItemBar';
 import CartBar from './CartBar';
@@ -16,7 +19,17 @@ import Customer from './Customer';
 import { Unstable_Popup as Popup } from '@mui/base/Unstable_Popup';
 import { styled } from '@mui/system';
 import { useNavigate } from 'react-router-dom';
+import { Collapse, CardBody } from 'reactstrap';
+import Button from '@mui/material/Button';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import Typography from '@mui/material/Typography';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
 import axios from 'axios';
+import Colapse from './Colapse';
+import OrderSum from './OrderSum';
 
 
 
@@ -24,37 +37,103 @@ import axios from 'axios';
 
 export default function Cart() {
   const navigate = useNavigate();
+  const [customerDetailsFilled, setCustomerDetailsFilled] = useState(false);
 
   const [addedItem, setAddedItem] = useState([]);
   const [book, setBook] = useState([]);
+  const [count, setCount] = useState();
+  const [bookCount, setBookCount] = useState(1);
+  const[update, setUpdate] = useState();
+    
+
+
+  const increment= (bookName) => {
+  setBookCount(bookCount+1);
+  console.log(bookName);
+  console.log("inside increment"+localStorage.getItem("customerToken"));
+  axios.put(`http://localhost:8083/user/addValue/${localStorage.getItem("customerToken")}/${bookName}` )
+  .then(response => {
+    console.log("Increased book value");
+    setUpdate(update+1);
+  })
+  .catch(error => {
+    console.error("Error increasing book value:", error);
+  });
+  }
+
+
+  const decrement=(bookName)=>{
+  if (bookCount>1){
+    console.log("inside decrement"+localStorage.getItem("customerToken"));
+    axios.put(`http://localhost:8083/user/reduceValue/${localStorage.getItem("customerToken")}/${bookName}`)
+  
+    .then(response => {
+    console.log("reduce book value");
+    setUpdate(update-1);
+  })
+  .catch(error => {
+    console.error("Error reducing book value:", error);
+  });
+  
+
+  
+  setBookCount(bookCount-1)
+  }}
+  
+  // const [isOpen, setIsOpen] = React.useState('false'); 
+  
+  
   // const data = JSON.parse(localStorage.getItem('addedItem'));
   
-  const cartItems = JSON.parse(localStorage.getItem('cartItems'));
+  // const cartItems = JSON.parse(localStorage.getItem('cartItems'));
   useEffect(() => {
-    const config = { headers: { token: localStorage.getItem("token") } };
+    const config = { headers: { token: localStorage.getItem("customerToken") } };
+    // console.log("token inside remove"+localStorage.getItem("customerToken"));
     axios
       .get("http://localhost:8083/user/showCart", config)
       .then((response) => {
         setBook(response.data.cartBookList);
         console.log("books in cart :" );
-        response.data.cartBookList.forEach((book) => {
-          console.log(`Book Name: ${book.bookName}, Book Price: ${book.bookPrice}, Book Quantity: ${book.bookQuantity}`);
-        });
+        // response.data.cartBookList.forEach((book) => {
+        //   console.log(`Book Name: ${book.bookName}, Book Price: ${book.bookPrice}, Book Quantity: ${book.bookQuantity}`);
+        // });
       })
       .catch((error) => {
         console.log(error.cause);
       });
-  }, [book]);
+      setCount(1);
+      setUpdate(1);
+      
 
+  }, [count,update]);
+  const calculateTotalPrice = () => {
+    return book.reduce((total, item) => total + item.bookPrice * item.bookQuantity, 0);
+  };
+
+  const handleRemove = (bookName) => {
+    console.log("in remove method");
+    axios
+      .delete(`http://localhost:8083/user/remove/${localStorage.getItem("customerToken")}/${bookName}`)
+      .then((response) => {
+        console.log("Book removed successfully");
+        console.log(response);
+        setCount(count + 1);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+
+  };
 
 
   
 
   console.log(addedItem);
+  
 
 
   return (
-    <>
+    <div >
 
       <CartBar />
       <div style={{ display: "flex", flexDirection: "column" }}>
@@ -71,122 +150,128 @@ export default function Cart() {
           }}
         >
 
-          {book.map((item) => (
+          {/* <Grid sx={{width:'76%', marginLeft:'19.5ch', border: "solid grey 2px",}}> */}
 
-            <Card
+            <Grid
               sx={{
+                // height:'35ch',
                 margin: "15px",
-                width: "75%",
+                width: "76%",
                 display: "flex",
                 // flexDirection:"column",
                 border: "solid grey 2px",
+                
+                
               }}
             >
-              <Box /*sx={{ border: "solid grey 2px", width: 150 }}*/>
-                My Cart
-                <CardMedia sx={{ height: 100, width: 100 }} image={item.imageUrl} />
-              </Box>
+              <div>
+              <div style={{display:'flex',flexDirection:'coloum', marginLeft:'4ch'}} >
+                <h3 >
+              My Cart
+              </h3>
+              </div>
 
-              <Box
-                sx={{
-                  //  width: 200,
-                  height: 200,
-                  // backgroundColor: 'white',
-                  // '&:hover': {
-                  //   backgroundColor: 'gray',
-
-                  // }, 
-                }}
-              >
-
-
-                <ImageListItem key={item.imageUrl}>
-                  <div style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    // height: 200,
-                  }}>
-                    {/* <img
-            src={`${item.img}?w=248&fit=crop&auto=format`}
-            srcSet={`${item.img}?w=248&fit=crop&auto=format&dpr=2 2x`}
-            alt={item.title}
-            loading="lazy"
-          /> */}
-                    <ImageListItemBar
-
-                      // sx={{ padding: '30Px', Width: 150, Height: 200 }}
-                      // title={item.bookName}
-                      // subtitle={<span>by: {item.bookAuthor}</span>}
-                      
-                      position="below"
-                    />
-                    <span> {item.bookName}</span>
-                    <span>by: {item.bookAuthor}</span>
-                    <span>Price: {item.bookPrice}</span>
+            {book.map((item) => (
+              
+              
+                  <div key={item.imageUrl} style={{marginBottom:'5ch',display:'flex',flexDirection:'row', marginLeft:'4ch',marginTop:'3ch'}} >
                     
-                    {/* <Button onClick={Counter
-          } >Sub</Button>
-          <Box> </Box>
-          <Button > add</Button> */}
+                    <Paper elevation={4} style={{ width: '20%', height: '20%', marginLeft: '' }}>
+                    <Grid style={{ backgroundColor: 'rgb(225, 225, 225)' }} className='img-div' >
+  <img style={{ padding: '10%', marginLeft: '10%', width: '60%', height: '60%' }} src={item.imageUrl} alt={item.bookName} />
+</Grid>
+</Paper>
+
+                 <div style={{marginLeft:'5ch', }}>
+                   <Box>
+                    <div>
+                    <span> {item.bookName}</span>
+                    </div>
+                    <div style={{color:'grey'}}>
+                    <span >by: {item.bookAuthor}</span>
+            
+                    </div>
+                    <div>
+                    <span>Rs: {calculateTotalPrice()}</span>
+                    </div>
+                    <div style={{display:'flex',flexDirection:'row',marginTop:'6ch'}}>
+                    <div >
+                    <div style={{ display: "flex", flexDirection: "row"}}
+        >
+          
+         <Fab   onClick={()=>decrement(item.bookName)} sx={{ width: 26, height: 20, marginRight: 1,}} >
+        -
+      </Fab>
+      <Box   sx={{
+        width: 40,
+        height: 25,
+        border: "solid grey 2px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      marginTop:'0.5ch',
+    borderColor:'rgb(225, 225, 225)'}}
+        
+        >{bookCount}
+        </Box>
+      <Fab  onClick={()=>increment(item.bookName)} sx={{ width: 26, height: 20, marginLeft:1 }} >
+        +
+      </Fab>
+
+          
+      
+        </div>
+                    </div>
+                    <div style={{ marginLeft:'4ch'}}>
+                    <Button variant="outlined" 
+                    onClick={() => handleRemove(item.bookName)}sx={{
+      color: 'black',       
+      borderColor: 'rgb(225, 225, 225)',
+      '&:hover': {
+        backgroundColor: '', // Change background color on hover
+        color: 'rgb(225, 225, 225)',
+        borderColor: 'rgb(225, 225, 225)', }
+      }}>Remove</Button>
+                    </div>
+                    </div>
+                    </Box>
+
+                    </div>
+                    
+                   
+           
+                    
 
 
                    
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        alignItems: "flex-end",
-                      }}
-                    > <div>
-                    <CounterItem />
+                  
                   </div>
-                      {/* <Link to ={'/customer'}>
-        <Button  size='small' variant="contained" >PLACE ORDER</Button>
-        </Link> */}
-                      <div>
-                        {/* <Link to ={'/customer'}> */}
-                        {/* <Button  type="button" onClick={()=> navigate("/customer")}>
-        Toggle Popup
-      </Button> */}
-                        {/* </Link> */}
-                        <Popup  >
-                          <PopupBody>
+                  
+                   
 
-                            {/* <Link to = {'/customer'}></Link> */}
-                          </PopupBody>
-                        </Popup>
-                      </div>
-                    </div>
-                  </div>
+                
+              
+              ))}
+              </div>
 
-                </ImageListItem>
-              </Box>
-            </Card>
-          ))}
+              
+
+
+            </Grid>
+            {/* </Grid> */}
+          
 
         </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            border: "solid grey 2px",
-            margin: "20px",
-            width: "50%",
-            height: "40px",
-            marginLeft: "12%",
-            // padding:"30%"
-          }}
-        >
-
-          <Box marginLeft={4}>
-            < Link to={'/customer'}>
-              Customer Details
-            </Link>
-          </Box>
-
-        </div>
-        <div
+        
+        <Grid>
+        <Colapse setCustomerDetailsFilled={setCustomerDetailsFilled}/>
+        </Grid>
+      
+        <Grid>
+          <OrderSum calculateTotalPrice={calculateTotalPrice} customerDetailsFilled={customerDetailsFilled} />
+          </Grid>
+        
+        {/* <div
           style={{
             display: "flex",
             alignItems: "center",
@@ -199,62 +284,9 @@ export default function Cart() {
         > <Box marginLeft={4}>
             Order Summary
           </Box>
-        </div>
+        </div> */}
       </div>
-    </>
+      </div>
+      
   );
 }
-const grey = {
-  50: '#f6f8fa',
-  200: '#d0d7de',
-  500: '#6e7781',
-  700: '#424a53',
-  900: '#24292f',
-};
-
-const blue = {
-  500: '#007FFF',
-  600: '#0072E5',
-  700: '#0059B2',
-};
-
-const PopupBody = styled('div')(
-  ({ theme }) => `
-  width: max-content;
-  padding: 12px 16px;
-  margin: 8px;
-  border-radius: 8px;
-  border: 1px solid ${theme.palette.mode === 'dark' ? grey[700] : grey[200]};
-  background-color: ${theme.palette.mode === 'dark' ? grey[900] : grey[50]};
-  box-shadow: ${theme.palette.mode === 'dark'
-      ? `0px 4px 8px rgb(0 0 0 / 0.7)`
-      : `0px 4px 8px rgb(0 0 0 / 0.1)`
-    };
-  font-family: 'IBM Plex Sans', sans-serif;
-  font-weight: 500;
-  font-size: 0.875rem;
-  z-index: 1;
-`,
-);
-
-const Button = styled('button')`
-  font-family: 'IBM Plex Sans', sans-serif;
-  font-weight: 600;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  background-color: ${blue[500]};
-  color: white;
-  border-radius: 8px;
-  padding: 8px 16px;
-  cursor: pointer;
-  transition: all 150ms ease;
-  border: none;
-
-  &:hover {
-    background-color: ${blue[600]};
-  }
-
-  &:active {
-    background-color: ${blue[700]};
-  }
-`;
